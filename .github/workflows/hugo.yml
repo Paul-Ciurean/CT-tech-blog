@@ -1,4 +1,4 @@
-name: GitHub Pages
+name: Build a Website using Hugo
 
 on:
   push:
@@ -16,17 +16,11 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          audience: sts.amazonaws.com.cn
-          role-to-assume: ${{ secrets.ROLE }}
-          aws-region: ${{ secrets.REGION }}
       
       - uses: actions/checkout@v4
         with:
-          submodules: true  # Fetch Hugo themes (true OR recursive)
-          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+          submodules: true 
+          fetch-depth: 0    
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
@@ -37,8 +31,25 @@ jobs:
       - name: Build
         run: hugo --minify
 
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tech-blog
+          path: public/*
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          role-to-assume: ${{ secrets.ROLE }}
+          aws-region: ${{ secrets.REGION }}
+      
       - name: Deploy to S3
-        run: aws s3 sync ./public/ s3://${{ secrets.S3_BUCKET }} --delete
+        run: |
+          aws s3 sync ./public/ s3://${{ secrets.S3_BUCKET }} --delete
       
       - name: Create CF Invalidation
-        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION_ID }} --paths /*
+        run: | 
+          aws cloudfront create-invalidation \
+          --distribution-id ${{ secrets.DISTRIBUTION_ID }} \
+          --paths "/*"
