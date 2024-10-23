@@ -1,0 +1,40 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com.cn
+          role-to-assume: ${{ secrets.ROLE }}
+          aws-region: ${{ secrets.REGION }}
+      
+      - uses: actions/checkout@v4
+        with:
+          submodules: true  # Fetch Hugo themes (true OR recursive)
+          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: '0.135.0'
+          extended: true
+
+      - name: Build
+        run: hugo --minify
+
+      - name: Deploy to S3
+        run: aws s3 sync ./public/ s3://${{ S3_BUCKET }} --delete
+      
+      - name: Create CF Invalidation
+        run: aws cloudfront create-invalidation --distribution-id ${{ DISTRIBUTION_ID }} --paths /*
