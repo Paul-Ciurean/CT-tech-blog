@@ -214,7 +214,7 @@ theme = "LoveIt"
   [params.social]
     Bitbucket = ""
     GitHub = ""
-    Linkedin = "https://www.linkedin.com/in/ciprian-paul-ciurean-80386424b/"
+    Linkedin = "ciprian-paul-ciurean-80386424b/"
     Twitter = ""
     Gitlab = ""
     Email = ""
